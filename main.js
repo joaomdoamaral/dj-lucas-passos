@@ -848,49 +848,87 @@
         );
       });
     });
-    // Celular: mesma ideia, com o título fixo no topo e os cards passando para o lado
+    // Celular: slider que passa sozinho; dá para deslizar com o dedo ou usar as setas
     mm.add("(max-width: 860px)", () => {
-      const pin = $(".events__pin");
       const track = $(".events__track");
-      // Até o último card encostar na margem direita
-      const distance = () => {
-        const last = track.lastElementChild;
-        const end = last.offsetLeft - track.offsetLeft + last.offsetWidth + parseFloat(getComputedStyle(track).paddingRight);
-        return Math.max(0, end - window.innerWidth);
+      const cards = $$(".card", track);
+      const dotsBox = $(".events__dots");
+      const DELAY = 3500; // tempo de cada card
+      const PAUSE_AFTER_TOUCH = 7000; // espera depois que a pessoa mexe no slider
+      let index = 0;
+      let timer = null;
+      let resumeTimer = null;
+      let inView = false;
+
+      dotsBox.innerHTML = cards.map(() => "<span></span>").join("");
+      const dots = $$("span", dotsBox);
+
+      const offsetOf = (i) => cards[i].offsetLeft - cards[0].offsetLeft;
+      const setActive = (i) => {
+        index = i;
+        dots.forEach((d, j) => d.classList.toggle("is-active", j === i));
       };
-      const horizontal = gsap.to(track, {
-        x: () => -distance(),
-        ease: "none",
-        scrollTrigger: {
-          trigger: ".events",
-          pin: pin,
-          start: "top top",
-          end: () => `+=${distance()}`,
-          scrub: 0.6,
-          anticipatePin: 1,
-          invalidateOnRefresh: true,
-          refreshPriority: 1, // calcula antes das seções de baixo, que dependem do espaço do pin
-        },
+      const goTo = (i) => {
+        const n = (i + cards.length) % cards.length;
+        track.scrollTo({ left: offsetOf(n), behavior: "smooth" });
+        setActive(n);
+      };
+
+      // Descobre o card atual pela posição da rolagem (quando a pessoa desliza)
+      const onScroll = () => {
+        const x = track.scrollLeft;
+        let nearest = 0;
+        cards.forEach((_, i) => {
+          if (Math.abs(offsetOf(i) - x) < Math.abs(offsetOf(nearest) - x)) nearest = i;
+        });
+        if (nearest !== index) setActive(nearest);
+      };
+
+      const play = () => {
+        clearInterval(timer);
+        if (reduceMotion || !inView) return;
+        timer = setInterval(() => goTo(index + 1), DELAY);
+      };
+      const pauseForUser = () => {
+        clearInterval(timer);
+        clearTimeout(resumeTimer);
+        resumeTimer = setTimeout(play, PAUSE_AFTER_TOUCH);
+      };
+
+      const prev = () => { goTo(index - 1); pauseForUser(); };
+      const next = () => { goTo(index + 1); pauseForUser(); };
+      $(".js-ev-prev").addEventListener("click", prev);
+      $(".js-ev-next").addEventListener("click", next);
+      track.addEventListener("scroll", onScroll, { passive: true });
+      track.addEventListener("touchstart", pauseForUser, { passive: true });
+
+      // Só roda sozinho quando a seção está na tela
+      const io = new IntersectionObserver(([e]) => {
+        inView = e.isIntersecting;
+        inView ? play() : clearInterval(timer);
+      }, { threshold: 0.4 });
+      io.observe(track);
+
+      setActive(0);
+      gsap.from(cards, {
+        x: 60,
+        opacity: 0,
+        duration: 0.9,
+        ease: "power3.out",
+        stagger: 0.08,
+        scrollTrigger: { trigger: track, start: "top 85%" },
       });
-      // Cada card diminui e some ao sair pela esquerda
-      $$(".card", track).forEach((card) => {
-        gsap.fromTo(
-          card,
-          { scale: 1, opacity: 1 },
-          {
-            scale: 0.82,
-            opacity: 0,
-            ease: "power1.in",
-            scrollTrigger: {
-              trigger: card,
-              containerAnimation: horizontal,
-              start: "left 4%",
-              end: "right 30%",
-              scrub: true,
-            },
-          }
-        );
-      });
+
+      return () => {
+        clearInterval(timer);
+        clearTimeout(resumeTimer);
+        io.disconnect();
+        track.removeEventListener("scroll", onScroll);
+        track.removeEventListener("touchstart", pauseForUser);
+        $(".js-ev-prev").removeEventListener("click", prev);
+        $(".js-ev-next").removeEventListener("click", next);
+        dotsBox.innerHTML = "";
+      };
     });
 
     // Passos: linha de progresso

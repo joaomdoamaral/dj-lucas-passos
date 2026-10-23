@@ -431,19 +431,33 @@ button { font: inherit; color: inherit; background: none; border: 0; cursor: poi
 .card__cta span { transition: transform 0.3s var(--ease); }
 .card__cta:hover span { transform: translateX(4px); }
 
+/* Controles do slider: só aparecem no celular */
+.events__nav { display: none; }
+
 @media (max-width: 860px) {
-  /* Celular: o título fica fixo no topo e os cards andam para o lado conforme a rolagem */
-  .events__pin {
-    height: 100vh; height: 100svh;
-    flex-direction: column; align-items: stretch; justify-content: center;
-    gap: 0;
-    padding: calc(var(--header-h) + 0.5rem) 0 1rem;
-  }
+  /* Celular: slider que passa sozinho, com deslizar e setas */
+  .events__pin { height: auto; flex-direction: column; align-items: stretch; gap: 0; padding: 4.5rem 0 3rem; }
   .events__head { width: auto; margin-left: 0; padding: 0 var(--gutter); background: none; }
   .events__head::after { display: none; }
   .events__head .section-sub { margin-top: 0.6rem; font-size: 0.92rem; }
-  .events__track { padding: 1.4rem var(--gutter) 0; gap: 0.9rem; }
-  .card { width: 72vw; min-height: min(400px, calc(100svh - 330px)); padding: 1.4rem; }
+  .events__track {
+    position: relative;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    scroll-padding-inline: var(--gutter);
+    overscroll-behavior-x: contain;
+    scrollbar-width: none;
+    padding: 1.6rem var(--gutter) 0.4rem;
+    gap: 0.9rem;
+  }
+  .events__track::-webkit-scrollbar { display: none; }
+  .card { width: 72vw; min-height: 400px; padding: 1.4rem; scroll-snap-align: start; }
+
+  .events__nav { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: 1.2rem var(--gutter) 0; }
+  .events__arrows { display: flex; gap: 0.6rem; }
+  .events__dots { display: flex; gap: 6px; }
+  .events__dots span { width: 6px; height: 6px; border-radius: 999px; background: rgba(244, 237, 228, 0.25); transition: width 0.4s var(--ease), background 0.4s; }
+  .events__dots span.is-active { width: 22px; background: var(--accent); }
   .card__media { height: 46%; }
   .card__bg { opacity: 0.8; }
   .card h3 { font-size: 1.15rem; margin-top: 1.1rem; }
