@@ -117,6 +117,9 @@
           <h2 class="section-title split-lines">Uma festa para cada história</h2>
           <p class="section-sub">Escolha o seu tipo de evento e fale direto com o Lucas.</p>
         </div>
+        <!-- No desktop este wrapper some do layout (display: contents); no celular segura as setas laterais -->
+        <div class="events__viewport">
+        <button class="gallery__arrow gallery__arrow--prev js-ev-prev" type="button" aria-label="Evento anterior"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg></button>
         <div class="events__track">
           <article class="card card--wedding">
             <div class="card__bg"></div>
@@ -159,13 +162,11 @@
             <a class="card__cta" data-wa="Olá, Lucas! Vim pelo site e quero um orçamento para o meu evento." target="_blank" rel="noopener">Falar sobre meu evento <span>→</span></a>
           </article>
         </div>
-        <!-- Controles do slider (só no celular) -->
+        <button class="gallery__arrow gallery__arrow--next js-ev-next" type="button" aria-label="Próximo evento"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg></button>
+        </div>
+        <!-- Barra de progresso do slider (só no celular) -->
         <div class="events__nav">
-          <div class="events__dots" aria-hidden="true"></div>
-          <div class="events__arrows">
-            <button class="round-btn js-ev-prev" type="button" aria-label="Evento anterior"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg></button>
-            <button class="round-btn js-ev-next" type="button" aria-label="Próximo evento"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg></button>
-          </div>
+          <div class="gallery__progress" aria-hidden="true"><span class="js-ev-bar"></span></div>
         </div>
       </div>
     </section>
@@ -174,7 +175,7 @@
     <section class="about" id="sobre">
       <div class="about__media">
         <div class="about__frame">
-          <img src="assets/lucas.webp" alt="DJ Lucas Passos tocando em um evento, com fones de ouvido e controladora Pioneer" width="853" height="853" loading="lazy" />
+          <img src="assets/lucas.webp" alt="DJ Lucas Passos tocando em um evento, com fones de ouvido e controladora Pioneer" width="853" height="853" />
         </div>
       </div>
 
@@ -182,7 +183,7 @@
         <p class="eyebrow">Sobre</p>
         <h2 class="section-title split-lines">Mais de 15 anos criando eventos que marcam histórias</h2>
         <p class="about__text scrub-words">
-          O Lucas é DJ open format: toca de tudo e mistura clássicos, sertanejo, funk, pop, flashback e eletrônico no ritmo que a pista pede. Também assume o microfone como MC para animar os momentos especiais e leva a estrutura de som e luz do evento. Tudo começa com uma conversa sobre os convidados, as músicas que contam a história de vocês e o que não pode tocar de jeito nenhum.
+          O Lucas é DJ open format: toca de tudo e mistura clássicos, sertanejo, pop, flashback e eletrônico no ritmo que a pista pede. Também assume o microfone como MC para animar os momentos especiais e leva a estrutura de som e luz do evento. Tudo começa com uma conversa sobre os convidados, as músicas que contam a história de vocês e o que não pode tocar de jeito nenhum.
         </p>
         <ul class="stats">
           <li><strong>+<span class="js-counter" data-to="15">0</span></strong><span>anos de pista</span></li>

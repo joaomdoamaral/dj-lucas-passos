@@ -120,8 +120,11 @@
     const first = $(".g-item", track);
     return first ? first.getBoundingClientRect().width + 16 : 300;
   };
-  galPrev.addEventListener("click", () => track.scrollBy({ left: -itemStep() * 2, behavior: "smooth" }));
-  galNext.addEventListener("click", () => track.scrollBy({ left: itemStep() * 2, behavior: "smooth" }));
+  // No celular anda um item por vez (centralizado); no desktop, dois
+  const galMobile = window.matchMedia("(max-width: 640px)");
+  const galJump = () => itemStep() * (galMobile.matches ? 1 : 2);
+  galPrev.addEventListener("click", () => track.scrollBy({ left: -galJump(), behavior: "smooth" }));
+  galNext.addEventListener("click", () => track.scrollBy({ left: galJump(), behavior: "smooth" }));
   $(".js-gal-open").addEventListener("click", () => openLightbox(0));
 
   function updateGalleryNav() {
@@ -445,54 +448,6 @@
   document.addEventListener("visibilitychange", () => document.hidden && togglePlay(false));
 
   /* ------------------------------------------------------------------
-   * Selos do hero no celular: uma linha só, trocando a cada 1,5s
-   * ------------------------------------------------------------------ */
-  function initTrustTicker() {
-    const list = $(".hero__trust");
-    const mq = window.matchMedia("(max-width: 640px)");
-    let timer = null;
-    let clone = null;
-    let index = 0;
-    const items = () => $$("li", list);
-
-    const start = () => {
-      if (reduceMotion) return;
-      // Cópia do primeiro item no fim, para o loop voltar ao início sem pulo
-      clone = list.firstElementChild.cloneNode(true);
-      clone.setAttribute("aria-hidden", "true");
-      list.appendChild(clone);
-      index = 0;
-      timer = setInterval(() => {
-        index++;
-        gsap.to(items(), {
-          xPercent: -100 * index,
-          duration: 0.6,
-          ease: "power3.inOut",
-          overwrite: true,
-          onComplete: () => {
-            if (index === items().length - 1) {
-              index = 0;
-              gsap.set(items(), { xPercent: 0 });
-            }
-          },
-        });
-      }, 1500);
-    };
-    const stop = () => {
-      clearInterval(timer);
-      if (clone) clone.remove();
-      clone = null;
-      gsap.set(items(), { clearProps: "transform" });
-    };
-    const apply = () => {
-      stop();
-      if (mq.matches) start();
-    };
-    apply();
-    mq.addEventListener("change", apply);
-  }
-
-  /* ------------------------------------------------------------------
    * Vídeo de fundo do hero: takes reais da festa e do Lucas tocando
    * ------------------------------------------------------------------ */
   function initHeroVideo() {
@@ -751,16 +706,22 @@
     });
 
     // Foto: revela de baixo para cima + parallax
-    gsap.to(".about__frame", {
-      clipPath: "inset(0% 0 0 0 round 20px)",
-      duration: 1.4,
-      ease: "power4.inOut",
-      scrollTrigger: { trigger: ".about__frame", start: "top 80%" },
-    });
+    // Começa assim que a borda da foto entra na tela, e revela rápido
+    // Início e fim no mesmo formato (4 valores), senão o GSAP não interpola e a foto só aparece no fim
+    gsap.fromTo(
+      ".about__frame",
+      { clipPath: "inset(100% 0% 0% 0% round 20px)" },
+      {
+        clipPath: "inset(0% 0% 0% 0% round 20px)",
+        duration: 0.9,
+        ease: "power3.out",
+        scrollTrigger: { trigger: ".about__frame", start: "top 95%" },
+      }
+    );
     gsap.fromTo(
       ".about__frame img",
-      { scale: 1.25 },
-      { scale: 1.05, duration: 1.8, ease: "power3.out", scrollTrigger: { trigger: ".about__frame", start: "top 80%" } }
+      { scale: 1.2 },
+      { scale: 1.05, duration: 1.2, ease: "power3.out", scrollTrigger: { trigger: ".about__frame", start: "top 95%" } }
     );
     gsap.fromTo(
       ".about__frame img",
@@ -852,7 +813,7 @@
     mm.add("(max-width: 860px)", () => {
       const track = $(".events__track");
       const cards = $$(".card", track);
-      const dotsBox = $(".events__dots");
+      const bar = $(".js-ev-bar");
       const DELAY = 3500; // tempo de cada card
       const PAUSE_AFTER_TOUCH = 7000; // espera depois que a pessoa mexe no slider
       let index = 0;
@@ -860,13 +821,17 @@
       let resumeTimer = null;
       let inView = false;
 
-      dotsBox.innerHTML = cards.map(() => "<span></span>").join("");
-      const dots = $$("span", dotsBox);
-
       const offsetOf = (i) => cards[i].offsetLeft - cards[0].offsetLeft;
       const setActive = (i) => {
         index = i;
-        dots.forEach((d, j) => d.classList.toggle("is-active", j === i));
+      };
+      // Barra de progresso igual à da galeria: o trecho laranja é a parte visível e anda junto com a rolagem
+      const updateBar = () => {
+        const max = track.scrollWidth - track.clientWidth;
+        const visible = Math.min(1, track.clientWidth / track.scrollWidth);
+        const progress = max > 0 ? track.scrollLeft / max : 0;
+        bar.style.width = `${visible * 100}%`;
+        bar.style.transform = `translateX(${(progress * (1 - visible) * 100) / visible}%)`;
       };
       const goTo = (i) => {
         const n = (i + cards.length) % cards.length;
@@ -876,6 +841,7 @@
 
       // Descobre o card atual pela posição da rolagem (quando a pessoa desliza)
       const onScroll = () => {
+        updateBar();
         const x = track.scrollLeft;
         let nearest = 0;
         cards.forEach((_, i) => {
@@ -910,8 +876,10 @@
       io.observe(track);
 
       setActive(0);
+      updateBar();
+      window.addEventListener("resize", updateBar);
       gsap.from(cards, {
-        x: 60,
+        y: 40, // vertical: deslocar na horizontal atrapalharia o encaixe no centro
         opacity: 0,
         duration: 0.9,
         ease: "power3.out",
@@ -927,7 +895,8 @@
         track.removeEventListener("touchstart", pauseForUser);
         $(".js-ev-prev").removeEventListener("click", prev);
         $(".js-ev-next").removeEventListener("click", next);
-        dotsBox.innerHTML = "";
+        window.removeEventListener("resize", updateBar);
+        bar.removeAttribute("style");
       };
     });
 
@@ -952,8 +921,11 @@
     });
 
     // Galeria
+    // No celular entra de baixo: deslocar na horizontal atrapalharia o encaixe no centro
+    const galleryMobile = window.matchMedia("(max-width: 640px)").matches;
     gsap.from(".g-item", {
-      x: 80,
+      x: galleryMobile ? 0 : 80,
+      y: galleryMobile ? 50 : 0,
       opacity: 0,
       duration: 1,
       ease: "power3.out",
@@ -1029,7 +1001,6 @@
   }
 
   initHeroVideo();
-  initTrustTicker();
   initVisualizer();
   initMagnetic();
   initScrollAnimations();
