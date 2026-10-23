@@ -220,17 +220,38 @@ button { font: inherit; color: inherit; background: none; border: 0; cursor: poi
 .wa-float.is-visible { transform: translateY(0); }
 .wa-float:hover { background: #3be07a; }
 
+/* No desktop o "dock" não existe visualmente; o botão flutua sozinho */
+.wa-dock { display: contents; }
+
+/* No celular vira uma barra fixa com o mesmo fundo do header.
+   Assim a barra do navegador (que pega a cor do rodapé da tela) fica escura, e não verde. */
 @media (max-width: 640px) {
+  .wa-dock {
+    display: block;
+    position: fixed;
+    left: 0; right: 0; bottom: 0;
+    z-index: 40;
+    padding: 10px 12px calc(10px + env(safe-area-inset-bottom));
+    background: rgba(11, 9, 7, 0.8);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    border-top: 1px solid var(--line);
+    transform: translateY(110%);
+    transition: transform 0.5s var(--ease);
+  }
+  .wa-dock.is-visible { transform: translateY(0); }
   .wa-float {
-    left: 12px;
-    right: 12px;
-    bottom: 12px;
+    position: static;
+    display: flex;
+    width: 100%;
     justify-content: center;
-    padding: 1rem;
+    padding: 0.95rem;
     font-size: 1rem;
+    transform: none;
+    box-shadow: none;
   }
   .wa-float::after { animation: none; }
-  .footer { padding-bottom: 88px !important; }
+  .footer { padding-bottom: calc(88px + env(safe-area-inset-bottom)) !important; }
 }
 
 /* ---------- Hero ---------- */
@@ -320,7 +341,9 @@ button { font: inherit; color: inherit; background: none; border: 0; cursor: poi
 }
 @media (max-width: 640px) {
   .hero__actions .btn--wa { width: 100%; }
-  .hero__trust { flex-direction: column; margin-top: 1.5rem; }
+  /* Uma linha só; o JS desliza um item por vez */
+  .hero__trust { flex-wrap: nowrap; gap: 0; overflow: hidden; margin-top: 1.5rem; }
+  .hero__trust li { flex: 0 0 100%; }
 }
 
 /* ---------- Marquee ---------- */
@@ -409,14 +432,22 @@ button { font: inherit; color: inherit; background: none; border: 0; cursor: poi
 .card__cta:hover span { transform: translateX(4px); }
 
 @media (max-width: 860px) {
-  .events__pin { height: auto; flex-direction: column; align-items: stretch; padding: 4.5rem 0 3rem; }
+  /* Celular: o título fica fixo no topo e os cards andam para o lado conforme a rolagem */
+  .events__pin {
+    height: 100vh; height: 100svh;
+    flex-direction: column; align-items: stretch; justify-content: center;
+    gap: 0;
+    padding: calc(var(--header-h) + 0.5rem) 0 1rem;
+  }
   .events__head { width: auto; margin-left: 0; padding: 0 var(--gutter); background: none; }
   .events__head::after { display: none; }
-  .events__track { overflow-x: auto; scroll-snap-type: x mandatory; padding: 2rem var(--gutter) 0.5rem; scroll-padding: 0 var(--gutter); scrollbar-width: none; }
-  .events__track::-webkit-scrollbar { display: none; }
-  .card { width: 80vw; min-height: 460px; scroll-snap-align: start; }
-  .card__media { height: 48%; }
+  .events__head .section-sub { margin-top: 0.6rem; font-size: 0.92rem; }
+  .events__track { padding: 1.4rem var(--gutter) 0; gap: 0.9rem; }
+  .card { width: 72vw; min-height: min(400px, calc(100svh - 330px)); padding: 1.4rem; }
+  .card__media { height: 46%; }
   .card__bg { opacity: 0.8; }
+  .card h3 { font-size: 1.15rem; margin-top: 1.1rem; }
+  .card p { font-size: 0.86rem; margin-bottom: 1.1rem; }
 }
 
 /* ---------- Sobre ---------- */

@@ -306,7 +306,9 @@
     header.classList.toggle("is-scrolled", y > 20);
     const r = contact.getBoundingClientRect();
     const contactInView = r.top < window.innerHeight * 0.7 && r.bottom > window.innerHeight * 0.3;
-    waFloat.classList.toggle("is-visible", y > window.innerHeight * 0.5 && !contactInView);
+    const showCta = y > window.innerHeight * 0.5 && !contactInView;
+    waFloat.classList.toggle("is-visible", showCta);
+    waFloat.parentElement.classList.toggle("is-visible", showCta);
   }
   if (lenis) lenis.on("scroll", ({ scroll }) => onScroll(scroll));
   else window.addEventListener("scroll", () => onScroll(window.scrollY), { passive: true });
@@ -441,6 +443,54 @@
   }
   playBtn.addEventListener("click", () => togglePlay());
   document.addEventListener("visibilitychange", () => document.hidden && togglePlay(false));
+
+  /* ------------------------------------------------------------------
+   * Selos do hero no celular: uma linha só, trocando a cada 1,5s
+   * ------------------------------------------------------------------ */
+  function initTrustTicker() {
+    const list = $(".hero__trust");
+    const mq = window.matchMedia("(max-width: 640px)");
+    let timer = null;
+    let clone = null;
+    let index = 0;
+    const items = () => $$("li", list);
+
+    const start = () => {
+      if (reduceMotion) return;
+      // Cópia do primeiro item no fim, para o loop voltar ao início sem pulo
+      clone = list.firstElementChild.cloneNode(true);
+      clone.setAttribute("aria-hidden", "true");
+      list.appendChild(clone);
+      index = 0;
+      timer = setInterval(() => {
+        index++;
+        gsap.to(items(), {
+          xPercent: -100 * index,
+          duration: 0.6,
+          ease: "power3.inOut",
+          overwrite: true,
+          onComplete: () => {
+            if (index === items().length - 1) {
+              index = 0;
+              gsap.set(items(), { xPercent: 0 });
+            }
+          },
+        });
+      }, 1500);
+    };
+    const stop = () => {
+      clearInterval(timer);
+      if (clone) clone.remove();
+      clone = null;
+      gsap.set(items(), { clearProps: "transform" });
+    };
+    const apply = () => {
+      stop();
+      if (mq.matches) start();
+    };
+    apply();
+    mq.addEventListener("change", apply);
+  }
 
   /* ------------------------------------------------------------------
    * Vídeo de fundo do hero: takes reais da festa e do Lucas tocando
@@ -728,16 +778,21 @@
       });
     });
 
-    // Contadores
+    // Destaques do "Sobre": entram um de cada vez e o +15 conta a partir do +0
+    const statsTl = gsap.timeline({ scrollTrigger: { trigger: ".stats", start: "top 88%" } });
+    statsTl.from(".stats li", { y: 34, opacity: 0, duration: 0.8, ease: "power3.out", stagger: 0.35 });
     $$(".js-counter").forEach((el) => {
       const obj = { v: 0 };
-      gsap.to(obj, {
-        v: Number(el.dataset.to),
-        duration: 2,
-        ease: "power3.out",
-        onUpdate: () => (el.textContent = Math.round(obj.v)),
-        scrollTrigger: { trigger: el, start: "top 92%" },
-      });
+      statsTl.to(
+        obj,
+        {
+          v: Number(el.dataset.to),
+          duration: 1.8,
+          ease: "power2.out",
+          onUpdate: () => (el.textContent = Math.round(obj.v)),
+        },
+        0.15
+      );
     });
 
     // Eventos: scroll horizontal (desktop) / carrossel (celular)
@@ -792,14 +847,47 @@
         );
       });
     });
+    // Celular: mesma ideia, com o título fixo no topo e os cards passando para o lado
     mm.add("(max-width: 860px)", () => {
-      gsap.from(".events .card", {
-        y: 40,
-        opacity: 0,
-        duration: 0.9,
-        ease: "power3.out",
-        stagger: 0.08,
-        scrollTrigger: { trigger: ".events__track", start: "top 88%" },
+      const pin = $(".events__pin");
+      const track = $(".events__track");
+      // Até o último card encostar na margem direita
+      const distance = () => {
+        const last = track.lastElementChild;
+        const end = last.offsetLeft - track.offsetLeft + last.offsetWidth + parseFloat(getComputedStyle(track).paddingRight);
+        return Math.max(0, end - window.innerWidth);
+      };
+      const horizontal = gsap.to(track, {
+        x: () => -distance(),
+        ease: "none",
+        scrollTrigger: {
+          trigger: ".events",
+          pin: pin,
+          start: "top top",
+          end: () => `+=${distance()}`,
+          scrub: 0.6,
+          anticipatePin: 1,
+          invalidateOnRefresh: true,
+        },
+      });
+      // Cada card diminui e some ao sair pela esquerda
+      $$(".card", track).forEach((card) => {
+        gsap.fromTo(
+          card,
+          { scale: 1, opacity: 1 },
+          {
+            scale: 0.82,
+            opacity: 0,
+            ease: "power1.in",
+            scrollTrigger: {
+              trigger: card,
+              containerAnimation: horizontal,
+              start: "left 4%",
+              end: "right 30%",
+              scrub: true,
+            },
+          }
+        );
       });
     });
 
@@ -901,6 +989,7 @@
   }
 
   initHeroVideo();
+  initTrustTicker();
   initVisualizer();
   initMagnetic();
   initScrollAnimations();
