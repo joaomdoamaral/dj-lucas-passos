@@ -779,8 +779,8 @@
     });
 
     // Destaques do "Sobre": entram um de cada vez e o +15 conta a partir do +0
-    const statsTl = gsap.timeline({ scrollTrigger: { trigger: ".stats", start: "top 88%" } });
-    statsTl.from(".stats li", { y: 34, opacity: 0, duration: 0.8, ease: "power3.out", stagger: 0.35 });
+    const statsTl = gsap.timeline({ scrollTrigger: { trigger: ".stats", start: "top 80%" } });
+    statsTl.from(".stats li", { x: -40, opacity: 0, duration: 0.8, ease: "power3.out", stagger: 0.35 });
     $$(".js-counter").forEach((el) => {
       const obj = { v: 0 };
       statsTl.to(
@@ -813,6 +813,7 @@
           end: () => `+=${distance()}`,
           scrub: 1,
           invalidateOnRefresh: true,
+          refreshPriority: 1, // calcula antes das seções de baixo, que dependem do espaço do pin
         },
       });
       const headEdge = () => Math.round(head.getBoundingClientRect().right);
@@ -868,6 +869,7 @@
           scrub: 0.6,
           anticipatePin: 1,
           invalidateOnRefresh: true,
+          refreshPriority: 1, // calcula antes das seções de baixo, que dependem do espaço do pin
         },
       });
       // Cada card diminui e some ao sair pela esquerda
